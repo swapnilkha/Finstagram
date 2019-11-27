@@ -2,6 +2,7 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import hashlib
+import time
 
 
 #Initialize the app from Flask
@@ -97,11 +98,11 @@ def home():
     query = 'SELECT postingdate, photoID FROM Photo WHERE photoPoster IN \
     (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true OR photoPoster IN \
-        (SELECT owner_username FROM BelongTo WHERE member_username = %s)'
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
+        postingdate DESC'
 
     cursor.execute(query, (user, user))
     data = cursor.fetchall()
-    print(data)
     cursor.close()
     return render_template('home.html', username=user, posts=data)
 
@@ -110,9 +111,14 @@ def home():
 def post():
     username = session['username']
     cursor = conn.cursor();
-    blog = request.form['blog']
-    query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-    cursor.execute(query, (blog, username))
+    photo_ID = request.form['photoID']
+    timestamp = str(time.strftime('%Y-%m-%d %H:%M:%S'))
+    caption = request.form['caption']
+    fp = request.form['filepath']
+    public_bool = int(request.form['public'])
+
+    query = 'INSERT INTO Photo VALUES(%s, %s, %s, %d, %s, %s)'
+    cursor.execute(query, (photoID, timestamp, fp, public_bool, caption, username))
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))
