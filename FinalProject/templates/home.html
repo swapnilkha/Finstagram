@@ -30,13 +30,15 @@
 Here are your posts:
 
 <table>
-	<th>Time</th>
-	<th>Post</th>
+	<th>Photo ID</th>
+	<th>Photo Poster</th>
+	<th>Date Posted</th>
 
 {% for line in posts %}
 	<tr>
-		<td>{{line.postingdate}}</td>
 		<td>{{line.photoID}}</td>
+		<td>{{line.photoPoster}}</td>
+		<td>{{line.postingdate}}</td>
 	</tr>
 {% endfor %}
 </table>

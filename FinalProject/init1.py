@@ -95,7 +95,7 @@ def home():
     user = session['username']
     cursor = conn.cursor();
 
-    query = 'SELECT postingdate, photoID FROM Photo WHERE photoPoster IN \
+    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
     (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true OR photoPoster IN \
         (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
@@ -120,6 +120,7 @@ def post():
     group_name = request.form['group_name']
 
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %d, %s, %s)'
+    query_shared = 'INSERT INTO SharedWith VALUES(%s, %s, %s)'
     cursor.execute(query, (photoID, timestamp, fp, public_bool, caption, username))
     conn.commit()
     cursor.close()
