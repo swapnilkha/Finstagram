@@ -117,6 +117,8 @@ def post():
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
 
+    group_name = request.form['group_name']
+
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %d, %s, %s)'
     cursor.execute(query, (photoID, timestamp, fp, public_bool, caption, username))
     conn.commit()
