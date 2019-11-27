@@ -12,7 +12,7 @@ conn = pymysql.connect(host='localhost',
                        port = 8889,
                        user='root',
                        password='root', # change
-                       db='Project', # change
+                       db='FinalProject', # change
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -37,13 +37,13 @@ def loginAuth():
     #grabs information from the forms
     username = request.form['username']
     password = request.form['password']
-    hashed_password = hashlib.md5(password).hexdigest()
+    hashed_password = hashlib.sha256(password.encode("utf-8")).hexdigest()
 
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
-    query = 'SELECT * FROM user WHERE username = %s and password = %s'
-    cursor.execute(query, (username, hashed_password))
+    query = 'SELECT * FROM Person WHERE username = %s and password = %s'
+    cursor.execute(query, (username, password))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -65,13 +65,13 @@ def registerAuth():
     #grabs information from the forms
     username = request.form['username']
     password = request.form['password']
-    f_name = request.form['fname']
-    l_name = request.form['lname']
-    password_hashed = hashlib.md5(password).hexdigest()
+    f_name = request.form['firstName']
+    l_name = request.form['lastName']
+    password_hashed = hashlib.sha256(password.encode("utf-8")).hexdigest()
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
-    query = 'SELECT * FROM user WHERE username = %s'
+    query = 'SELECT * FROM Person WHERE username = %s'
     cursor.execute(query, (username))
     #stores the results in a variable
     data = cursor.fetchone()
@@ -82,7 +82,7 @@ def registerAuth():
         error = "This user already exists"
         return render_template('register.html', error = error)
     else:
-        ins = 'INSERT INTO user VALUES(%s, %s, %s, %s)'
+        ins = 'INSERT INTO Person VALUES(%s, %s, %s, %s)'
         cursor.execute(ins, (username, password_hashed, f_name, l_name))
         conn.commit()
         cursor.close()
@@ -93,9 +93,15 @@ def registerAuth():
 def home():
     user = session['username']
     cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, (user))
+
+    query = 'SELECT postingdate, photoID FROM Photo WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s)'
+
+    cursor.execute(query, (user, user))
     data = cursor.fetchall()
+    print(data)
     cursor.close()
     return render_template('home.html', username=user, posts=data)
 
@@ -145,3 +151,5 @@ app.secret_key = 'some key that you will never guess'
 #for changes to go through, TURN OFF FOR PRODUCTION
 if __name__ == "__main__":
     app.run('127.0.0.1', 5000, debug = False)
+
+
