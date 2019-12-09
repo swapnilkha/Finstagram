@@ -101,10 +101,14 @@ def home():
         (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
         postingdate DESC'
 
+    getgr = 'SELECT groupName FROM Friendgroup WHERE groupOwner = %s'
+
     cursor.execute(query, (user, user))
     data = cursor.fetchall()
+    cursor.execute(getgr, (user))
+    groups = cursor.fetchall() 
     cursor.close()
-    return render_template('home.html', username=user, posts=data)
+    return render_template('home.html', username=user, posts=data, grps=groups)
 
         
 @app.route('/post', methods=['GET', 'POST'])
@@ -117,11 +121,16 @@ def post():
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
 
-    group_name = request.form['group_name']
+    group_name = request.form.getlist('groupname')
 
-    query = 'INSERT INTO Photo VALUES(%s, %s, %s, %d, %s, %s)'
+    query = 'INSERT INTO Photo VALUES(%s, %s, %s, %s, %s, %s)'
     query_shared = 'INSERT INTO SharedWith VALUES(%s, %s, %s)'
-    cursor.execute(query, (photoID, timestamp, fp, public_bool, caption, username))
+    cursor.execute(query, (photo_ID, timestamp, fp, public_bool, caption, username))
+
+    if len(group_name) >0: 
+        for group in group_name:
+            cursor.execute(query_shared, (username, group, photo_ID))
+
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))

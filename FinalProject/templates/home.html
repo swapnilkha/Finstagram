@@ -5,20 +5,22 @@
 <form action="/post" method="POST">
 	<h1>Welcome {{username}}</h1> 
 	<input type="text" name = "photoID" placeholder="photoID" required/> </br>
-	<input type="submit" value = Post />
 	<br>
 	<input type="text" name = "caption" placeholder="caption" required/> </br>
-	<input type="submit" value = Post />
 	<br>
 	<input type="text" name = "filepath" placeholder="filepath" required/> </br>
-	<input type="submit" value = Post />
 	<br>
 	<input type="text" name = "public" placeholder="public" required/> </br>
-	<input type="submit" value = Post />
 	<br>
-	<input type="text" name = "groupname" placeholder="groupname" required/> </br>
-	<input type="submit" value = Post />
+	<!-- <input type="text" name = "groupname[]" placeholder="groupname" required/> </br> -->
 
+	<select multiple class="form-control" id="sel1" name = "groupname">
+      {% for group in grps %}
+      <option>{{group.groupName}}</option>
+      {% endfor %}
+    </select>
+
+	<input type="submit" value = Post />
 </form>
 
 <style type="text/css">
