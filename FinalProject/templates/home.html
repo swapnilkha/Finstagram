@@ -12,7 +12,7 @@
 	<br>
 	<input type="text" name = "public" placeholder="public" required/> </br>
 	<br>
-	<!-- <input type="text" name = "groupname[]" placeholder="groupname" required/> </br> -->
+	<!-- <input type="text" name = "groupinsert" placeholder="groupinsert" required/> </br> -->
 
 	<select multiple class="form-control" id="sel1" name = "groupname">
       {% for group in grps %}
@@ -36,11 +36,44 @@ Here are your posts:
 	<th>Photo Poster</th>
 	<th>Date Posted</th>
 
+
 {% for line in posts %}
 	<tr>
 		<td>{{line.photoID}}</td>
 		<td>{{line.photoPoster}}</td>
 		<td>{{line.postingdate}}</td>
+	</tr>
+{% endfor %}
+
+</table>
+<br>
+People tagged in each photo:
+
+<table>
+	<th>photo id</th>
+	<th>username</th>
+	<th>firstName</th>
+	<th>lastName</th>
+{% for line in tagged %}
+	<tr>
+		<td>{{line.photoID}}</td>
+		<td>{{line.username}}</td>
+		<td>{{line.firstName}}</td>
+		<td>{{line.lastName}}</td>
+	</tr>
+{% endfor %}
+</table>
+<br>
+People who liked each photo:
+<table>
+	<th>photo id</th>
+	<th>username</th>
+	<th>rating</th>
+{% for line in likes %}
+	<tr>
+		<td>{{line.photoID}}</td>
+		<td>{{line.username}}</td>
+		<td>{{line.rating}}</td>
 	</tr>
 {% endfor %}
 </table>

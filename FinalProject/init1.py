@@ -10,10 +10,10 @@ app = Flask(__name__)
 
 #Configure MySQL
 conn = pymysql.connect(host='localhost',
-                       port = 3306, # change
+                       port = 8889, # change
                        user='root',
-                       password='', # change
-                       db='realfinalproject', # change
+                       password='root', # change
+                       db='FinalProject', # change
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -44,7 +44,7 @@ def loginAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s and password = %s'
-    cursor.execute(query, (username, hashed_password))
+    cursor.execute(query, (username, password))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -101,14 +101,32 @@ def home():
         (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
         postingdate DESC'
 
+    get_tagged = 'SELECT photoID, username, firstName, lastName FROM Photo NATURAL JOIN Tagged \
+    NATURAL JOIN Person WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
+        postingdate DESC'
+
+    get_likes = 'SELECT photoID, username, rating FROM Photo NATURAL JOIN Likes \
+    NATURAL JOIN Person WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
+        postingdate DESC'
+
     getgr = 'SELECT groupName FROM Friendgroup WHERE groupOwner = %s'
 
     cursor.execute(query, (user, user))
     data = cursor.fetchall()
     cursor.execute(getgr, (user))
     groups = cursor.fetchall() 
+    cursor.execute(get_tagged, (user, user))
+    tagged_people = cursor.fetchall()
+    cursor.execute(get_likes, (user, user))
+    liked_users = cursor.fetchall()
     cursor.close()
-    return render_template('home.html', username=user, posts=data, grps=groups)
+    return render_template('home.html', username=user, posts=data, grps=groups, tagged=tagged_people, likes=liked_users)
 
         
 @app.route('/post', methods=['GET', 'POST'])
@@ -120,16 +138,17 @@ def post():
     caption = request.form['caption']
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
-
+    # group_insert = request.form['groupinsert']
     group_name = request.form.getlist('groupname')
 
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %s, %s, %s)'
     query_shared = 'INSERT INTO SharedWith VALUES(%s, %s, %s)'
     cursor.execute(query, (photo_ID, timestamp, fp, public_bool, caption, username))
 
-    if len(group_name) >0: 
+    if len(group_name) > 0: 
         for group in group_name:
             cursor.execute(query_shared, (username, group, photo_ID))
+    
 
     conn.commit()
     cursor.close()
