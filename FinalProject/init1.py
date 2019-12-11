@@ -159,24 +159,48 @@ def post():
 
 @app.route('/addfriendgroup', methods=["GET", "POST"])
 def addfriendgroup():
-    # cursor = conn.cursor();
-    # username = session['username']
-    # # group_insert = request.form['groupinsert']
-    # # group_desc = request.form['groupdesc']
-    # insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
-    # cursor.execute(insert_fg_query, (username, group_insert, group_desc))
-    # cursor.close()
-    return render_template('addfriendgroup.html')
-
-@app.route('/show_posts', methods=["GET", "POST"])
-def show_posts():
-    poster = request.args['poster']
     cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, poster)
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('show_posts.html', poster_name=poster, posts=data)
+    username = session['username']
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+
+    check_exists = 'SELECT groupOwner, groupName FROM Friendgroup WHERE groupOwner = %s AND groupName = %s'
+    cursor.execute(check_exists, (username, group_insert))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already created a group with this name"
+        cursor.close()
+        return render_template('addfriendgroup.html')
+    else:
+        insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+        cursor.execute(insert_fg_query, (username, group_insert, group_desc))
+        conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
+
+@app.route('/addfriend', methods=["GET", "POST"])
+def addfriend():
+    cursor = conn.cursor();
+    username = session['username']
+    friend_username = request.form['friend']
+    group_names = request.form.getlist('groupname')
+
+
+    check_exists = 'SELECT member_username, groupName FROM BelongTo WHERE member_username = %s AND groupName = %s'
+    for grp in group_names:
+        cursor.execute(check_exists, (friend_username, grp))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already have a friend in one of these groups"
+        cursor.close()
+        return render_template('addfriend.html')
+    else:
+        for grp in group_names:
+            insert_fg_query = 'INSERT INTO BelongTo VALUES(%s, %s, %s)'
+            cursor.execute(insert_fg_query, (friend_username, username, grp))
+            conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():
