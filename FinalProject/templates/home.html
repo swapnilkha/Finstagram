@@ -45,7 +45,33 @@ Here are your posts:
 {% endfor %}
 </table>
 
-<a href="/select_blogger">Select a blogger</a>
+<form action="/select_blogger" method="POST">
+	<input type="text" name = "poster" placeholder="poster" required/> </br>
+	<input type="submit" value = 'search by poster'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/select_tag" method="POST">
+	<input type="text" name = "tag" placeholder="tag" required/> </br>
+	<input type="submit" value = 'search by tag'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/requestFollow" method="POST">
+	<input type="text" name = "follow" placeholder= "follow" required/> </br>
+	<input type="submit" value = 'request to follow'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/listFollow" method="POST">
+	<input type="submit" value = 'look at follow requests'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
 <br>
 <a href="/logout">Logout</a>
 
