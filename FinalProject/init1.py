@@ -135,18 +135,39 @@ def post():
     cursor.close()
     return redirect(url_for('home'))
 
-@app.route('/select_blogger')
+# search by poster method - Dipto
+@app.route('/select_blogger', methods = ['GET', 'POST'])
 def select_blogger():
-    #check that user is logged in
-    #username = session['username']
-    #should throw exception if username not found
-    
+    username = session['username'];
+    poster = request.form['poster'];
     cursor = conn.cursor();
-    query = 'SELECT DISTINCT username FROM blog'
-    cursor.execute(query)
+    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true AND photoPoster = %s OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) AND photoposter = %s ORDER BY \
+        postingdate DESC'
+    #query = 'SELECT DISTINCT username FROM blog'
+    cursor.execute(query, (username, poster, username, poster));
     data = cursor.fetchall()
     cursor.close()
-    return render_template('select_blogger.html', user_list=data)
+    return render_template('select_blogger.html', posts=data)
+   
+# search by tag method - Dipto
+@app.route('/select_tag', methods = ['GET', 'POST'])
+def select_tag():
+    username = session['username']
+    tag = request.form['tag']
+    cursor = conn.cursor()
+    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    ((SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+    (SELECT owner_username FROM BelongTo WHERE member_username = %s)) \
+    AND photoID IN (SELECT photoID FROM tagged WHERE username = %s AND tagstatus = 1) ORDER BY \
+    postingdate DESC'
+    cursor.execute(query, (username, username, tag))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('select_tag.html', posts=data)
 
 @app.route('/show_posts', methods=["GET", "POST"])
 def show_posts():
@@ -162,6 +183,62 @@ def show_posts():
 def logout():
     session.pop('username')
     return redirect('/')
+  
+@app.route('/requestFollow', methods=['GET', 'POST'])
+def requestFollow():
+    username = session['username']
+    follow = request.form['follow']
+    cursor = conn.cursor()
+    query = 'INSERT INTO follow(username_followed, username_follower, \
+            followstatus) VALUES(%s, %s, %s)'
+    cursor.execute(query, (follow, username, "0"))
+    cursor.close()
+    return redirect(url_for('home'))
+    
+            
+
+@app.route('/editFollow', methods=['GET', 'POST'])
+def editFollow():
+    username = session['username']
+    follower = request.form['follower']
+    choice = request.form['choice']
+    if choice == 'accept':
+        cursor = conn.cursor()
+        query = 'UPDATE follow SET followstatus = %s \
+                where username_followed = %s AND \
+                username_follower = %s'
+        cursor.execute(query, ("1", username, follower))
+        query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+        cursor.execute(query, (username, '0'))
+        data = cursor.fetchall()
+        cursor.close()
+        return render_template('show_follows.html', lst = data)
+    elif choice == 'reject':
+        cursor = conn.cursor()
+        query = "DELETE FROM follow WHERE username_followed = %s AND \
+                username_follower = %s AND followstatus = %s"
+        cursor.execute(query, (username, follower, "0"))
+        query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+        cursor.execute(query, (username, '0'))
+        data = cursor.fetchall()
+        cursor.close()
+        return render_template('show_follows.html', lst = data)
+
+@app.route('/listFollow', methods=['GET', 'POST'])
+def listFollow():
+    username = session['username']
+    cursor = conn.cursor()
+    query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+    cursor.execute(query, (username, '0'))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('show_follows.html', lst = data)
         
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000
