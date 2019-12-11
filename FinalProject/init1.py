@@ -148,6 +148,10 @@ def post():
         for group in group_name:
             cursor.execute(query_shared, (username, group, photo_ID))
     
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
 
     conn.commit()
     cursor.close()
@@ -155,13 +159,13 @@ def post():
 
 @app.route('/addfriendgroup', methods=["GET", "POST"])
 def addfriendgroup():
-    cursor = conn.cursor();
-    username = session['username']
-    group_insert = request.form['groupinsert']
-    group_desc = request.form['groupdesc']
-    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
-    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
-    cursor.close()
+    # cursor = conn.cursor();
+    # username = session['username']
+    # # group_insert = request.form['groupinsert']
+    # # group_desc = request.form['groupdesc']
+    # insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+    # cursor.execute(insert_fg_query, (username, group_insert, group_desc))
+    # cursor.close()
     return render_template('addfriendgroup.html')
 
 @app.route('/show_posts', methods=["GET", "POST"])
