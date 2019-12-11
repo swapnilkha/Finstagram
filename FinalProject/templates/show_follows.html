@@ -1,0 +1,28 @@
+<html>
+<head>
+Follow requests
+</head>
+<body>
+
+<table>
+	<th>reqests</th>
+{% for line in lst %}
+	<tr>
+		<td>{{line.username_follower}}</td>
+	</tr>
+{% endfor %}
+</table>
+<form action="/editFollow" method="POST">
+	<input type="text" name = "follower" placeholder= "follower" required/> </br>
+	<input type="text" name = "choice" placeholder= "accept/reject" required/> </br>
+	<input type="submit" value = 'accept/reject'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>
