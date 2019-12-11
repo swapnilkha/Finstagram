@@ -6,7 +6,7 @@ import time
 
 
 #Initialize the app from Flask
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 
 #Configure MySQL
 conn = pymysql.connect(host='localhost',
@@ -44,7 +44,7 @@ def loginAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s and password = %s'
-    cursor.execute(query, (username, password))
+    cursor.execute(query, (username, hashed_password))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -95,7 +95,7 @@ def home():
     user = session['username']
     cursor = conn.cursor();
 
-    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    query = 'SELECT photoID, photoPoster, postingdate, filepath FROM Photo WHERE photoPoster IN \
     (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true OR photoPoster IN \
         (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \

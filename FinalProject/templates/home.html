@@ -35,6 +35,7 @@ Here are your posts:
 	<th>Photo ID</th>
 	<th>Photo Poster</th>
 	<th>Date Posted</th>
+	<th>Photo</th>
 
 
 {% for line in posts %}
@@ -42,6 +43,7 @@ Here are your posts:
 		<td>{{line.photoID}}</td>
 		<td>{{line.photoPoster}}</td>
 		<td>{{line.postingdate}}</td>
+		<td> <img src="{{line.filepath}}" width="300" /></img> </td>
 	</tr>
 {% endfor %}
 
