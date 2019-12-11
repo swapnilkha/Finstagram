@@ -6,14 +6,14 @@ import time
 
 
 #Initialize the app from Flask
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 
 #Configure MySQL
 conn = pymysql.connect(host='localhost',
-                       port = 3306, # change
+                       port = 8889, # change
                        user='root',
-                       password='', # change
-                       db='realfinalproject', # change
+                       password='root', # change
+                       db='FinalProject', # change
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -44,7 +44,7 @@ def loginAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s and password = %s'
-    cursor.execute(query, (username, hashed_password))
+    cursor.execute(query, (username, password))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -95,7 +95,21 @@ def home():
     user = session['username']
     cursor = conn.cursor();
 
-    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    query = 'SELECT photoID, photoPoster, postingdate, filepath FROM Photo WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
+        postingdate DESC'
+
+    get_tagged = 'SELECT photoID, username, firstName, lastName FROM Photo NATURAL JOIN Tagged \
+    NATURAL JOIN Person WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
+        postingdate DESC'
+
+    get_likes = 'SELECT photoID, username, rating FROM Photo NATURAL JOIN Likes \
+    NATURAL JOIN Person WHERE photoPoster IN \
     (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true OR photoPoster IN \
         (SELECT owner_username FROM BelongTo WHERE member_username = %s) ORDER BY \
@@ -107,8 +121,12 @@ def home():
     data = cursor.fetchall()
     cursor.execute(getgr, (user))
     groups = cursor.fetchall() 
+    cursor.execute(get_tagged, (user, user))
+    tagged_people = cursor.fetchall()
+    cursor.execute(get_likes, (user, user))
+    liked_users = cursor.fetchall()
     cursor.close()
-    return render_template('home.html', username=user, posts=data, grps=groups)
+    return render_template('home.html', username=user, posts=data, grps=groups, tagged=tagged_people, likes=liked_users)
 
         
 @app.route('/post', methods=['GET', 'POST'])
@@ -120,16 +138,20 @@ def post():
     caption = request.form['caption']
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
-
     group_name = request.form.getlist('groupname')
 
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %s, %s, %s)'
     query_shared = 'INSERT INTO SharedWith VALUES(%s, %s, %s)'
     cursor.execute(query, (photo_ID, timestamp, fp, public_bool, caption, username))
 
-    if len(group_name) >0: 
+    if len(group_name) > 0: 
         for group in group_name:
             cursor.execute(query_shared, (username, group, photo_ID))
+    
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
 
     conn.commit()
     cursor.close()
@@ -168,16 +190,50 @@ def select_tag():
     data = cursor.fetchall()
     cursor.close()
     return render_template('select_tag.html', posts=data)
-
-@app.route('/show_posts', methods=["GET", "POST"])
-def show_posts():
-    poster = request.args['poster']
+@app.route('/addfriendgroup', methods=["GET", "POST"])
+def addfriendgroup():
     cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, poster)
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('show_posts.html', poster_name=poster, posts=data)
+    username = session['username']
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+
+    check_exists = 'SELECT groupOwner, groupName FROM Friendgroup WHERE groupOwner = %s AND groupName = %s'
+    cursor.execute(check_exists, (username, group_insert))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already created a group with this name"
+        cursor.close()
+        return render_template('addfriendgroup.html')
+    else:
+        insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+        cursor.execute(insert_fg_query, (username, group_insert, group_desc))
+        conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
+
+@app.route('/addfriend', methods=["GET", "POST"])
+def addfriend():
+    cursor = conn.cursor();
+    username = session['username']
+    friend_username = request.form['friend']
+    group_names = request.form.getlist('groupname')
+
+
+    check_exists = 'SELECT member_username, groupName FROM BelongTo WHERE member_username = %s AND groupName = %s'
+    for grp in group_names:
+        cursor.execute(check_exists, (friend_username, grp))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already have a friend in one of these groups"
+        cursor.close()
+        return render_template('addfriend.html')
+    else:
+        for grp in group_names:
+            insert_fg_query = 'INSERT INTO BelongTo VALUES(%s, %s, %s)'
+            cursor.execute(insert_fg_query, (friend_username, username, grp))
+            conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():

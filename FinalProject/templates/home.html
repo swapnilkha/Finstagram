@@ -12,7 +12,6 @@
 	<br>
 	<input type="text" name = "public" placeholder="public" required/> </br>
 	<br>
-	<!-- <input type="text" name = "groupname[]" placeholder="groupname" required/> </br> -->
 
 	<select multiple class="form-control" id="sel1" name = "groupname">
       {% for group in grps %}
@@ -21,7 +20,30 @@
     </select>
 
 	<input type="submit" value = Post />
+
+
 </form>
+
+<form action="/addfriendgroup" method="POST">
+	<h1>Add Friend group</h1> 
+	<input type="text" name = "groupinsert" placeholder="groupname" required/> </br>
+	<input type="text" name = "groupdesc" placeholder="groupdescription" required/> </br>
+	<input type="submit" value = Post />
+</form>
+
+<form action="/addfriend" method="POST">
+	<h1>Add Friend to group</h1> 
+	<select multiple class="form-control" id="sel1" name = "groupname">
+      {% for group in grps %}
+      <option>{{group.groupName}}</option>
+      {% endfor %}
+    </select>
+    <br>
+	<input type="text" name = "friend" placeholder="type friend name" required/> </br>
+	<input type="submit" value = Post />
+</form>
+
+
 
 <style type="text/css">
 	table, th, td{
@@ -35,12 +57,47 @@ Here are your posts:
 	<th>Photo ID</th>
 	<th>Photo Poster</th>
 	<th>Date Posted</th>
+	<th>Photo</th>
+
 
 {% for line in posts %}
 	<tr>
 		<td>{{line.photoID}}</td>
 		<td>{{line.photoPoster}}</td>
 		<td>{{line.postingdate}}</td>
+		<td> <img src="{{line.filepath}}" width="300" /></img> </td>
+	</tr>
+{% endfor %}
+
+</table>
+<br>
+People tagged in each photo:
+
+<table>
+	<th>photo id</th>
+	<th>username</th>
+	<th>firstName</th>
+	<th>lastName</th>
+{% for line in tagged %}
+	<tr>
+		<td>{{line.photoID}}</td>
+		<td>{{line.username}}</td>
+		<td>{{line.firstName}}</td>
+		<td>{{line.lastName}}</td>
+	</tr>
+{% endfor %}
+</table>
+<br>
+People who liked each photo:
+<table>
+	<th>photo id</th>
+	<th>username</th>
+	<th>rating</th>
+{% for line in likes %}
+	<tr>
+		<td>{{line.photoID}}</td>
+		<td>{{line.username}}</td>
+		<td>{{line.rating}}</td>
 	</tr>
 {% endfor %}
 </table>
@@ -72,6 +129,7 @@ Here are your posts:
 		<p class="error"><strong>Error:</strong> {{error}}</p>
 	{% endif %}
 </form>
+<a href="/addfriendgroup">Add Friend Group</a>
 <br>
 <a href="/logout">Logout</a>
 
