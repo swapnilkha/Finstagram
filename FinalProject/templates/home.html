@@ -12,7 +12,6 @@
 	<br>
 	<input type="text" name = "public" placeholder="public" required/> </br>
 	<br>
-	<!-- <input type="text" name = "groupinsert" placeholder="groupinsert" required/> </br> -->
 
 	<select multiple class="form-control" id="sel1" name = "groupname">
       {% for group in grps %}
@@ -22,6 +21,8 @@
 
 	<input type="submit" value = Post />
 </form>
+
+
 
 <style type="text/css">
 	table, th, td{
@@ -80,7 +81,7 @@ People who liked each photo:
 {% endfor %}
 </table>
 
-<a href="/select_blogger">Select a blogger</a>
+<a href="/addfriendgroup">Add Friend Group</a>
 <br>
 <a href="/logout">Logout</a>
 

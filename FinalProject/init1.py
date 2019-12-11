@@ -44,7 +44,7 @@ def loginAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s and password = %s'
-    cursor.execute(query, (username, hashed_password))
+    cursor.execute(query, (username, password))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -138,7 +138,6 @@ def post():
     caption = request.form['caption']
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
-    # group_insert = request.form['groupinsert']
     group_name = request.form.getlist('groupname')
 
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %s, %s, %s)'
@@ -154,18 +153,16 @@ def post():
     cursor.close()
     return redirect(url_for('home'))
 
-@app.route('/select_blogger')
-def select_blogger():
-    #check that user is logged in
-    #username = session['username']
-    #should throw exception if username not found
-    
+@app.route('/addfriendgroup', methods=["GET", "POST"])
+def addfriendgroup():
     cursor = conn.cursor();
-    query = 'SELECT DISTINCT username FROM blog'
-    cursor.execute(query)
-    data = cursor.fetchall()
+    username = session['username']
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
     cursor.close()
-    return render_template('select_blogger.html', user_list=data)
+    return render_template('addfriendgroup.html')
 
 @app.route('/show_posts', methods=["GET", "POST"])
 def show_posts():
