@@ -147,11 +147,6 @@ def post():
     if len(group_name) > 0: 
         for group in group_name:
             cursor.execute(query_shared, (username, group, photo_ID))
-    
-    group_insert = request.form['groupinsert']
-    group_desc = request.form['groupdesc']
-    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
-    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
 
     conn.commit()
     cursor.close()
