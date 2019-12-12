@@ -196,14 +196,16 @@ def addfriendgroup():
     group_insert = request.form['groupinsert']
     group_desc = request.form['groupdesc']
 
+    # Here we check if a friend group exists for a given user name as well as group name
     check_exists = 'SELECT groupOwner, groupName FROM Friendgroup WHERE groupOwner = %s AND groupName = %s'
     cursor.execute(check_exists, (username, group_insert))
     check_exists_data = cursor.fetchone()
     if check_exists_data:
-        error = "You have already created a group with this name"
         cursor.close()
+        # If already exists, return page showing error to user
         return render_template('addfriendgroup.html')
     else:
+        # Else we insert a new friedngroup
         insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
         cursor.execute(insert_fg_query, (username, group_insert, group_desc))
         conn.commit()
@@ -217,17 +219,18 @@ def addfriend():
     friend_username = request.form['friend']
     group_names = request.form.getlist('groupname')
 
-
+    # We check if the friend is already in the desired group
     check_exists = 'SELECT member_username, groupName FROM BelongTo WHERE member_username = %s AND groupName = %s'
     for grp in group_names:
         cursor.execute(check_exists, (friend_username, grp))
     check_exists_data = cursor.fetchone()
     if check_exists_data:
-        error = "You have already have a friend in one of these groups"
         cursor.close()
+        # If so we display error page
         return render_template('addfriend.html')
     else:
         for grp in group_names:
+            # Else we insert data into belongto table
             insert_fg_query = 'INSERT INTO BelongTo VALUES(%s, %s, %s)'
             cursor.execute(insert_fg_query, (friend_username, username, grp))
             conn.commit()
