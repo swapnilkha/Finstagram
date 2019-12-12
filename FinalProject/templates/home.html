@@ -12,7 +12,6 @@
 	<br>
 	<input type="text" name = "public" placeholder="public" required/> </br>
 	<br>
-	<!-- <input type="text" name = "groupinsert" placeholder="groupinsert" required/> </br> -->
 
 	<select multiple class="form-control" id="sel1" name = "groupname">
       {% for group in grps %}
@@ -21,7 +20,30 @@
     </select>
 
 	<input type="submit" value = Post />
+
+
 </form>
+
+<form action="/addfriendgroup" method="POST">
+	<h1>Add Friend group</h1> 
+	<input type="text" name = "groupinsert" placeholder="groupname" required/> </br>
+	<input type="text" name = "groupdesc" placeholder="groupdescription" required/> </br>
+	<input type="submit" value = Post />
+</form>
+
+<form action="/addfriend" method="POST">
+	<h1>Add Friend to group</h1> 
+	<select multiple class="form-control" id="sel1" name = "groupname">
+      {% for group in grps %}
+      <option>{{group.groupName}}</option>
+      {% endfor %}
+    </select>
+    <br>
+	<input type="text" name = "friend" placeholder="type friend name" required/> </br>
+	<input type="submit" value = Post />
+</form>
+
+
 
 <style type="text/css">
 	table, th, td{
@@ -80,7 +102,34 @@ People who liked each photo:
 {% endfor %}
 </table>
 
-<a href="/select_blogger">Select a blogger</a>
+<form action="/select_blogger" method="POST">
+	<input type="text" name = "poster" placeholder="poster" required/> </br>
+	<input type="submit" value = 'search by poster'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/select_tag" method="POST">
+	<input type="text" name = "tag" placeholder="tag" required/> </br>
+	<input type="submit" value = 'search by tag'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/requestFollow" method="POST">
+	<input type="text" name = "follow" placeholder= "follow" required/> </br>
+	<input type="submit" value = 'request to follow'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<form action="/listFollow" method="POST">
+	<input type="submit" value = 'look at follow requests'/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/addfriendgroup">Add Friend Group</a>
 <br>
 <a href="/logout">Logout</a>
 

@@ -73,7 +73,7 @@ def registerAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s'
-    cursor.execute(query, (username))
+    cursor.execute(query, (password_hashed))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
@@ -138,7 +138,6 @@ def post():
     caption = request.form['caption']
     fp = request.form['filepath']
     public_bool = int(request.form['public'])
-    # group_insert = request.form['groupinsert']
     group_name = request.form.getlist('groupname')
 
     query = 'INSERT INTO Photo VALUES(%s, %s, %s, %s, %s, %s)'
@@ -149,38 +148,153 @@ def post():
         for group in group_name:
             cursor.execute(query_shared, (username, group, photo_ID))
     
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
+    insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+    cursor.execute(insert_fg_query, (username, group_insert, group_desc))
 
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))
 
-@app.route('/select_blogger')
+# search by poster method - Dipto
+@app.route('/select_blogger', methods = ['GET', 'POST'])
 def select_blogger():
-    #check that user is logged in
-    #username = session['username']
-    #should throw exception if username not found
-    
+    username = session['username'];
+    poster = request.form['poster'];
     cursor = conn.cursor();
-    query = 'SELECT DISTINCT username FROM blog'
-    cursor.execute(query)
+    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true AND photoPoster = %s OR photoPoster IN \
+        (SELECT owner_username FROM BelongTo WHERE member_username = %s) AND photoposter = %s ORDER BY \
+        postingdate DESC'
+    #query = 'SELECT DISTINCT username FROM blog'
+    cursor.execute(query, (username, poster, username, poster));
     data = cursor.fetchall()
     cursor.close()
-    return render_template('select_blogger.html', user_list=data)
+    return render_template('select_blogger.html', posts=data)
+   
+# search by tag method - Dipto
+@app.route('/select_tag', methods = ['GET', 'POST'])
+def select_tag():
+    username = session['username']
+    tag = request.form['tag']
+    cursor = conn.cursor()
+    query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
+    ((SELECT username_followed FROM Follow WHERE username_follower = %s AND \
+    followstatus = true) AND allFollowers = true OR photoPoster IN \
+    (SELECT owner_username FROM BelongTo WHERE member_username = %s)) \
+    AND photoID IN (SELECT photoID FROM tagged WHERE username = %s AND tagstatus = 1) ORDER BY \
+    postingdate DESC'
+    cursor.execute(query, (username, username, tag))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('select_tag.html', posts=data)
+@app.route('/addfriendgroup', methods=["GET", "POST"])
+def addfriendgroup():
+    cursor = conn.cursor();
+    username = session['username']
+    group_insert = request.form['groupinsert']
+    group_desc = request.form['groupdesc']
 
-@app.route('/show_posts', methods=["GET", "POST"])
-def show_posts():
-    poster = request.args['poster']
+    check_exists = 'SELECT groupOwner, groupName FROM Friendgroup WHERE groupOwner = %s AND groupName = %s'
+    cursor.execute(check_exists, (username, group_insert))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already created a group with this name"
+        cursor.close()
+        return render_template('addfriendgroup.html')
+    else:
+        insert_fg_query = 'INSERT INTO Friendgroup VALUES(%s, %s, %s)'
+        cursor.execute(insert_fg_query, (username, group_insert, group_desc))
+        conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
+
+@app.route('/addfriend', methods=["GET", "POST"])
+def addfriend():
     cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, poster)
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('show_posts.html', poster_name=poster, posts=data)
+    username = session['username']
+    friend_username = request.form['friend']
+    group_names = request.form.getlist('groupname')
+
+
+    check_exists = 'SELECT member_username, groupName FROM BelongTo WHERE member_username = %s AND groupName = %s'
+    for grp in group_names:
+        cursor.execute(check_exists, (friend_username, grp))
+    check_exists_data = cursor.fetchone()
+    if check_exists_data:
+        error = "You have already have a friend in one of these groups"
+        cursor.close()
+        return render_template('addfriend.html')
+    else:
+        for grp in group_names:
+            insert_fg_query = 'INSERT INTO BelongTo VALUES(%s, %s, %s)'
+            cursor.execute(insert_fg_query, (friend_username, username, grp))
+            conn.commit()
+        cursor.close()
+        return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():
     session.pop('username')
     return redirect('/')
+  
+@app.route('/requestFollow', methods=['GET', 'POST'])
+def requestFollow():
+    username = session['username']
+    follow = request.form['follow']
+    cursor = conn.cursor()
+    query = 'INSERT INTO follow(username_followed, username_follower, \
+            followstatus) VALUES(%s, %s, %s)'
+    cursor.execute(query, (follow, username, "0"))
+    cursor.close()
+    return redirect(url_for('home'))
+    
+            
+
+@app.route('/editFollow', methods=['GET', 'POST'])
+def editFollow():
+    username = session['username']
+    follower = request.form['follower']
+    choice = request.form['choice']
+    if choice == 'accept':
+        cursor = conn.cursor()
+        query = 'UPDATE follow SET followstatus = %s \
+                where username_followed = %s AND \
+                username_follower = %s'
+        cursor.execute(query, ("1", username, follower))
+        query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+        cursor.execute(query, (username, '0'))
+        data = cursor.fetchall()
+        cursor.close()
+        return render_template('show_follows.html', lst = data)
+    elif choice == 'reject':
+        cursor = conn.cursor()
+        query = "DELETE FROM follow WHERE username_followed = %s AND \
+                username_follower = %s AND followstatus = %s"
+        cursor.execute(query, (username, follower, "0"))
+        query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+        cursor.execute(query, (username, '0'))
+        data = cursor.fetchall()
+        cursor.close()
+        return render_template('show_follows.html', lst = data)
+
+@app.route('/listFollow', methods=['GET', 'POST'])
+def listFollow():
+    username = session['username']
+    cursor = conn.cursor()
+    query = 'SELECT username_follower FROM follow WHERE \
+                username_followed = %s AND followstatus = %s\
+                GROUP BY username_follower'
+    cursor.execute(query, (username, '0'))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('show_follows.html', lst = data)
         
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000
