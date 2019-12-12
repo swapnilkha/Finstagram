@@ -160,9 +160,11 @@ def post():
 # search by poster method - Dipto
 @app.route('/select_blogger', methods = ['GET', 'POST'])
 def select_blogger():
+    # gets the user and the selected poster
     username = session['username'];
     poster = request.form['poster'];
     cursor = conn.cursor();
+    # searches using that poster and displays the data
     query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
     (SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true AND photoPoster = %s OR photoPoster IN \
@@ -177,9 +179,11 @@ def select_blogger():
 # search by tag method - Dipto
 @app.route('/select_tag', methods = ['GET', 'POST'])
 def select_tag():
+    # gets the user and the selected tag
     username = session['username']
     tag = request.form['tag']
     cursor = conn.cursor()
+    # searches using that tag and displays the data
     query = 'SELECT photoID, photoPoster, postingdate FROM Photo WHERE photoPoster IN \
     ((SELECT username_followed FROM Follow WHERE username_follower = %s AND \
     followstatus = true) AND allFollowers = true OR photoPoster IN \
