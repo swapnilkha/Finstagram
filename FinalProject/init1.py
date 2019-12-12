@@ -73,7 +73,7 @@ def registerAuth():
     cursor = conn.cursor()
     #executes query
     query = 'SELECT * FROM Person WHERE username = %s'
-    cursor.execute(query, (username))
+    cursor.execute(query, (password_hashed))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
